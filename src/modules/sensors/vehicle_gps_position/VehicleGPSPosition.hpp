@@ -71,6 +71,8 @@ private:
 	void ParametersUpdate(bool force = false);
 	void Publish(const sensor_gps_s &gps, uint8_t selected);
 
+	void CheckGPSSpoofing(const sensor_gps_s &gps);
+
 	// defines used to specify the mask position for use of different accuracy metrics in the GPS blending algorithm
 	static constexpr uint8_t BLEND_MASK_USE_SPD_ACC  = 1;
 	static constexpr uint8_t BLEND_MASK_USE_HPOS_ACC = 2;
@@ -97,7 +99,13 @@ private:
 	DEFINE_PARAMETERS(
 		(ParamInt<px4::params::SENS_GPS_MASK>) _param_sens_gps_mask,
 		(ParamFloat<px4::params::SENS_GPS_TAU>) _param_sens_gps_tau,
-		(ParamInt<px4::params::SENS_GPS_PRIME>) _param_sens_gps_prime
+		(ParamInt<px4::params::SENS_GPS_PRIME>) _param_sens_gps_prime,
+		(ParamInt<px4::params::GPS_NOISE_BASE>) _param_gps_noise_base,
+		(ParamInt<px4::params::GPS_NOISE_TIME>) _param_gps_noise_time,
+		(ParamInt<px4::params::GPS_NOISE_THR>) _param_gps_noise_threshold,
+		(ParamInt<px4::params::GPS_AGC_AVG>) _param_gps_agc_avg,
+		(ParamInt<px4::params::GPS_AGC_TIME>) _param_gps_agc_time,
+		(ParamInt<px4::params::GPS_SPOOFING>) _param_gps_spoofing	// 0: There is no GPS spoofing, 1: There is GPS spoofing
 	)
 };
 }; // namespace sensors

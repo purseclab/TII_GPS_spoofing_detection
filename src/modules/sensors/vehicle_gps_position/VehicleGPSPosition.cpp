@@ -37,6 +37,8 @@
 #include <lib/ecl/geo/geo.h>
 #include <lib/mathlib/mathlib.h>
 
+#include <systemlib/mavlink_log.h>
+
 namespace sensors
 {
 VehicleGPSPosition::VehicleGPSPosition() :
@@ -138,8 +140,93 @@ void VehicleGPSPosition::Run()
 	perf_end(_cycle_perf);
 }
 
+unsigned int gps_print_cnt;
+unsigned int gps_measure_noise;
+unsigned int gps_measure_noise_cnt;
+unsigned int gps_measure_agc;
+unsigned int gps_measure_agc_cnt;
+bool gps_noise_set = false;
+bool gps_noise_param_init = false;
+bool gps_noise_measure = false;
+bool gps_agc_measure = false;
+
+void VehicleGPSPosition::CheckGPSSpoofing(const sensor_gps_s &gps)
+{
+	static orb_advert_t mavlink_log_pub = nullptr;
+
+	// Step 1. Initialize the parameter value related to the GPS noise level
+	if ( (gps_noise_param_init == false) && (gps_noise_set == false) ) {
+		_param_gps_noise_base.set(0);
+		_param_gps_noise_base.commit();
+		_param_gps_spoofing.set(0);
+		_param_gps_spoofing.commit();
+
+		gps_noise_param_init = true;
+	}
+
+	// Step 2. Measure baseline noise level under the normal condition
+	// Let's start to measure the baseline after time specified in 'GPS_NOISE_TIME' parameter
+	// because the GPS noise level is not stable during the GPS receiver's booting process
+	if ( (gps_noise_measure == true) && (gps_noise_set == false) && (_param_gps_noise_base.get() == 0) ) {
+		gps_measure_noise += gps.noise_per_ms;
+		gps_measure_noise_cnt++;
+	}
+
+	gps_print_cnt++;
+
+	// Step 3. Let's store the measured baseline noise level
+	if (gps_print_cnt > _param_gps_noise_time.get()) {
+		gps_print_cnt = 0;
+
+		if ( (gps_noise_set == false) && (gps_noise_measure == true) ){
+			gps_noise_set = true;
+			int baseline_noise_level = gps_measure_noise/gps_measure_noise_cnt;
+
+			mavlink_log_info(&mavlink_log_pub, "Measured baseline noise level: %d (%d/%d)", baseline_noise_level, gps_measure_noise, gps_measure_noise_cnt);
+
+			_param_gps_noise_base.set(baseline_noise_level);
+			_param_gps_noise_base.commit();
+		}
+
+		gps_noise_measure = true;
+	}
+
+	gps_measure_agc += gps.automatic_gain_control;
+	gps_measure_agc_cnt++;
+
+	// Step 4. Let's check whether there is a GPS spoofing attack every 'GPS_AGC_TIME'.
+	if (gps_measure_agc_cnt > _param_gps_agc_time.get()) {
+
+		int agc_avg = gps_measure_agc/gps_measure_agc_cnt;
+		_param_gps_agc_avg.set(agc_avg);
+		_param_gps_agc_avg.commit();
+
+		mavlink_log_info(&mavlink_log_pub, "[DEBUG] Noise: %d, AGC: %d, AGC_avg: %d", gps.noise_per_ms, gps.automatic_gain_control, agc_avg);
+
+		gps_measure_agc = 0;
+		gps_measure_agc_cnt = 0;
+
+		// Step 5. If the current noise level is above this threshold value from the baseline
+		if ( (gps_noise_set == true) && gps.noise_per_ms > (_param_gps_noise_threshold.get() + _param_gps_noise_base.get()) ) {
+
+			// If the current AGC is smaller than the moving average of AGC, we conclude that GPS spoofing attack is ongoing.
+			// Why? GPS spoofing attacks make (1) the noise level increase and (2) the AGC decrease
+			if ( gps.automatic_gain_control <= _param_gps_agc_avg.get() ) {
+				mavlink_log_info(&mavlink_log_pub, "[DEBUG] Noise_t:%d, Noise_baseline: %d, AGC_t: %d, AGC_avg: %d", gps.noise_per_ms, _param_gps_noise_base.get(), gps.automatic_gain_control, _param_gps_agc_avg.get());
+				mavlink_log_info(&mavlink_log_pub, "[WARNING] Detect a GPS spoofing attack");
+
+				// Step 6: Change the 'GPS_SPOOFING' parameter value to trigger a GPS failsafe
+				_param_gps_spoofing.set(1);
+				_param_gps_spoofing.commit();
+			}
+		}
+	}
+}
+
 void VehicleGPSPosition::Publish(const sensor_gps_s &gps, uint8_t selected)
 {
+	CheckGPSSpoofing(gps);
+
 	vehicle_gps_position_s gps_output{};
 
 	gps_output.timestamp = gps.timestamp;

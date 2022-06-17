@@ -2111,6 +2111,17 @@ Commander::run()
 			}
 		}
 
+		// If we detected a GPS spoofing attack, let's land on the ground as a failsafe behavior.
+		if(_param_gps_spoofing.get() == 1) {
+			// Step 1. Set the barometer sensor as the primary source for height data (0: Barometer, 1: GPS, 2: Range sensor, 3: Vision)
+			_param_ekf2_hgt_mode.set(0);
+			_param_ekf2_hgt_mode.commit();
+
+			// Step 2. Change the current flight mode into 'LAND' mode as the failsafe behavior
+			//main_state_transition(_status, commander_state_s::MAIN_STATE_AUTO_LOITER, _status_flags, _internal_state);
+			main_state_transition(_status, commander_state_s::MAIN_STATE_AUTO_LAND, _status_flags, _internal_state);
+		}
+
 		/* start geofence result check */
 		_geofence_result_sub.update(&_geofence_result);
 		_status.geofence_violated = _geofence_result.geofence_violated;

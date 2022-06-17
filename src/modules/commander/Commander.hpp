@@ -277,7 +277,10 @@ private:
 		(ParamFloat<px4::params::CP_DIST>) _param_cp_dist,
 
 		(ParamFloat<px4::params::BAT_LOW_THR>) _param_bat_low_thr,
-		(ParamFloat<px4::params::BAT_CRIT_THR>) _param_bat_crit_thr
+		(ParamFloat<px4::params::BAT_CRIT_THR>) _param_bat_crit_thr,
+
+		(ParamInt<px4::params::GPS_SPOOFING>) _param_gps_spoofing,	// 0: There is no GPS spoofing, 1: There is GPS spoofing
+		(ParamInt<px4::params::EKF2_HGT_MODE>) _param_ekf2_hgt_mode	// Selects the primary source for height data (0: Barometer, 1: GPS, 2: Range sensor, 3: Vision)
 	)
 
 	enum class PrearmedMode {

@@ -52,6 +52,9 @@
 
 #include <string.h>
 
+#include <systemlib/mavlink_log.h>
+int ephemeris_cnt;
+
 #include "rtcm.h"
 #include "ubx.h"
 
@@ -459,6 +462,15 @@ int GPSDriverUBX::configureDevicePreV27(const GNSSSystemsMask &gnssSystems)
 
 	/* configure message rates */
 	/* the last argument is divisor for measurement rate (set by CFG RATE), i.e. 1 means 5Hz */
+
+	static orb_advert_t 	_mavlink_log_pub_gps {nullptr};
+
+	if(configureMessageRate(UBX_MSG_AID_EPH, 1)) {
+		mavlink_log_info(&_mavlink_log_pub_gps, "[DEBUG] configureMessageRate returns success.");
+	}
+	else {
+		mavlink_log_info(&_mavlink_log_pub_gps, "[DEBUG] configureMessageRate returns error.");
+	}
 
 	/* try to set rate for NAV-PVT */
 	/* (implemented for ubx7+ modules only, use NAV-SOL, NAV-POSLLH, NAV-VELNED and NAV-TIMEUTC for ubx6) */
@@ -1164,6 +1176,14 @@ GPSDriverUBX::payloadRxInit()
 	_rx_state = UBX_RXMSG_HANDLE;	// handle by default
 
 	switch (_rx_msg) {
+
+	case UBX_MSG_AID_EPH:
+			ephemeris_cnt++;
+
+			static orb_advert_t 	_mavlink_log_gps_init {nullptr};
+			mavlink_log_info(&_mavlink_log_gps_init, "[DEBUG] PX4 receives Ephemeris message. (%d).", ephemeris_cnt);
+			break;
+
 	case UBX_MSG_NAV_PVT:
 		if ((_rx_payload_length != UBX_PAYLOAD_RX_NAV_PVT_SIZE_UBX7)		/* u-blox 7 msg format */
 		    && (_rx_payload_length != UBX_PAYLOAD_RX_NAV_PVT_SIZE_UBX8)) {	/* u-blox 8+ msg format */
@@ -1691,6 +1711,13 @@ GPSDriverUBX::payloadRxDone()
 
 	// handle message
 	switch (_rx_msg) {
+
+	// NOTE: We are not exactly parsing Ephemeris messages because we count the number of received Ephemeris to detect GPS spoofing
+	case UBX_MSG_AID_EPH:
+
+		static orb_advert_t 	mavlink_log_eph {nullptr};
+		mavlink_log_info(&mavlink_log_eph, "[DEBUG] PX4 receives Ephemeris message. (%d).", ephemeris_cnt);
+		break;
 
 	case UBX_MSG_NAV_PVT:
 		UBX_TRACE_RXMSG("Rx NAV-PVT");

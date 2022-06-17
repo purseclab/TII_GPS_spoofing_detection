@@ -65,6 +65,11 @@
 #define UBX_SYNC1             0xB5
 #define UBX_SYNC2             0x62
 
+// For parsing ephemeris messages
+#define UBX_CLASS_AID		0x0B
+#define UBX_ID_AID_EPH		0x31
+#define UBX_MSG_AID_EPH	((UBX_CLASS_AID) | UBX_ID_AID_EPH << 8)
+
 /* Message Classes */
 #define UBX_CLASS_NAV         0x01
 #define UBX_CLASS_RXM         0x02
@@ -1085,5 +1090,3 @@ private:
 	const UBXMode _mode;
 	const float _heading_offset;
 };
-
-
