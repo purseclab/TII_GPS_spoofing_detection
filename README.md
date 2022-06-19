@@ -1,6 +1,13 @@
 # Implementation Note
 
-Please feel free to contact me (kim2956@purdue.edu) if you have any question or suggestion.
+Please feel free to contact me (kim2956@purdue.edu) if you have any question or suggestion. <br>
+
+🛑 This GitHub repository does not include submodules of PX4. In other words, you cannot directly build PX4 firmware from this repository. **Please download buildable PX4 source code from <a href="https://drive.google.com/file/d/10T4EgArKsgZdYHLpMvEYk4vllYZUDveS/view?usp=sharing">this</a>**. <br>
+Then, you can build PX4 firmware.
+```bash
+make clean
+make px4_fmu-v5_default upload
+```
 
 ## 1. Goal
 This PX4 version aims to detect GPS spoofing attacks.
@@ -25,6 +32,8 @@ d) src/modules/commander/Commander.hpp <br>
 e) src/modules/sensors/vehicle_gps_position/VehicleGPSPosition.cpp <br>
 f) src/modules/sensors/vehicle_gps_position/VehicleGPSPosition.hpp <br>
 g) src/modules/sensors/vehicle_gps_position/params.c <br>
+
+💡 **Please check commit history to easily see the changed source code lines**<br>
 
 ## 4. GPS Spoofing Detection Logic
 ### Step 1. Initialize configuration parameters related to the GPS noise level
