@@ -80,3 +80,60 @@ PARAM_DEFINE_FLOAT(SENS_GPS_TAU, 10.0f);
  * @max 1
  */
 PARAM_DEFINE_INT32(SENS_GPS_PRIME, 0);
+
+/**
+ * Measured baseline of noise level under the normal condition
+ *
+ *
+ * @group GPS spoofing detection
+ * @min 0
+ * @max 200
+ */
+PARAM_DEFINE_INT32(GPS_NOISE_BASE, 0);
+
+/**
+ * Time to measure baseline of noise level under the normal condition
+ *
+ *
+ * @group GPS spoofing detection
+ * @min 30
+ * @max 100
+ */
+PARAM_DEFINE_INT32(GPS_NOISE_TIME, 40);
+
+/**
+ * If the current noise level is above this threshold value from the baseline, we conclude that GPS spoofing attack is ongoing.
+ *
+ * @group GPS spoofing detection
+ * @min 15
+ * @max 40
+ */
+PARAM_DEFINE_INT32(GPS_NOISE_THR, 20);
+
+/**
+ * Store the moving average of automatic gain control (AGC)
+ *
+ * @group GPS spoofing detection
+ * @min 0
+ * @max 20000
+ */
+PARAM_DEFINE_INT32(GPS_AGC_AVG, 0);
+
+/**
+ * Time interval to measure the moving average of AGC
+ *
+ * @group GPS spoofing detection
+ * @min 30
+ * @max 100
+ */
+PARAM_DEFINE_INT32(GPS_AGC_TIME, 40);
+
+/**
+ * 0: There is no GPS spoofing, 1: There is GPS spoofing
+ *
+ * @group GPS spoofing detection
+ * @min 0
+ * @max 1
+ */
+PARAM_DEFINE_INT32(GPS_SPOOFING, 0);
+
