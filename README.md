@@ -176,3 +176,6 @@ PX4 detects a GPS spoofing attack because (i) the current noise level (119) is a
 **Answer**: We newly add the following configuration parameters: GPS_NOISE_BASE, GPS_NOISE_TIME, GPS_NOISE_THR, GPS_AGC_AVG, GPS_AGC_TIME, and GPS_SPOOFING. <br>
 <a href="https://github.com/KimHyungSub/px4_gps/blob/1cb0cbf9b36897799d26c520070b7eb64c3f8dc3/src/modules/sensors/vehicle_gps_position/params.c#L92" target="_blank">Link to the code</a> <br>
 In particular, GPS_NOISE_THR's default value is 20. We believe that this default value is reasonable to distinguish between normal and attack conditions. Yet, we would like to recommand you to test this PX4 version in your environment. 
+
+## 8. Experiment Data
+You can download the experiment data related to GPS spoofing (<a href="https://github.com/KimHyungSub/px4_gps/blob/master/GPS_noise_experiment.zip" target="_blank">link</a>)
