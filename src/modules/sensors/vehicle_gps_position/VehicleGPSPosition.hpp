@@ -105,7 +105,9 @@ private:
 		(ParamInt<px4::params::GPS_NOISE_THR>) _param_gps_noise_threshold,
 		(ParamInt<px4::params::GPS_AGC_AVG>) _param_gps_agc_avg,
 		(ParamInt<px4::params::GPS_AGC_TIME>) _param_gps_agc_time,
+		(ParamInt<px4::params::GPS_TIME_THR>) _param_gps_time_threshold,
 		(ParamInt<px4::params::GPS_SPOOFING>) _param_gps_spoofing	// 0: There is no GPS spoofing, 1: There is GPS spoofing
+
 	)
 };
 }; // namespace sensors

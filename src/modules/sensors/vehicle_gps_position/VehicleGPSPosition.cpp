@@ -38,6 +38,7 @@
 #include <lib/mathlib/mathlib.h>
 
 #include <systemlib/mavlink_log.h>
+#include <inttypes.h>
 
 namespace sensors
 {
@@ -145,10 +146,12 @@ unsigned int gps_measure_noise;
 unsigned int gps_measure_noise_cnt;
 unsigned int gps_measure_agc;
 unsigned int gps_measure_agc_cnt;
+uint64_t gps_last_measured_time;
 bool gps_noise_set = false;
 bool gps_noise_param_init = false;
 bool gps_noise_measure = false;
 bool gps_agc_measure = false;
+int gps_time_cnt;
 
 void VehicleGPSPosition::CheckGPSSpoofing(const sensor_gps_s &gps)
 {
@@ -202,6 +205,7 @@ void VehicleGPSPosition::CheckGPSSpoofing(const sensor_gps_s &gps)
 		_param_gps_agc_avg.commit();
 
 		mavlink_log_info(&mavlink_log_pub, "[DEBUG] Noise: %d, AGC: %d, AGC_avg: %d", gps.noise_per_ms, gps.automatic_gain_control, agc_avg);
+		//mavlink_log_info(&mavlink_log_pub, "[DEBUG] last_t: %llu, cur_t: %llu (ms)", gps_last_measured_time/1000, gps.time_utc_usec/1000);
 
 		gps_measure_agc = 0;
 		gps_measure_agc_cnt = 0;
@@ -212,7 +216,7 @@ void VehicleGPSPosition::CheckGPSSpoofing(const sensor_gps_s &gps)
 			// If the current AGC is smaller than the moving average of AGC, we conclude that GPS spoofing attack is ongoing.
 			// Why? GPS spoofing attacks make (1) the noise level increase and (2) the AGC decrease
 			if ( gps.automatic_gain_control <= _param_gps_agc_avg.get() ) {
-				mavlink_log_info(&mavlink_log_pub, "[DEBUG] Noise_t:%d, Noise_baseline: %d, AGC_t: %d, AGC_avg: %d", gps.noise_per_ms, _param_gps_noise_base.get(), gps.automatic_gain_control, _param_gps_agc_avg.get());
+				mavlink_log_info(&mavlink_log_pub, "[WARNING] Noise_t:%d, Noise_baseline: %d, AGC_t: %d, AGC_avg: %d", gps.noise_per_ms, _param_gps_noise_base.get(), gps.automatic_gain_control, _param_gps_agc_avg.get());
 				mavlink_log_info(&mavlink_log_pub, "[WARNING] Detect a GPS spoofing attack");
 
 				// Step 6: Change the 'GPS_SPOOFING' parameter value to trigger a GPS failsafe
@@ -221,6 +225,34 @@ void VehicleGPSPosition::CheckGPSSpoofing(const sensor_gps_s &gps)
 			}
 		}
 	}
+
+	// Step 7. Let's check a GPS spoofing attack by detecting time jump.
+	// (Reference) https://gpspatron.com/spoofing-attacks-chapter-2/#:~:text=PPS%20monitoring%20with%20time%20server
+	//
+	// (How?) We can compare the internal time with the time determined by the navigation module (GPS receiver).
+	// A severe time jump can point to the presence of the GPS spoofing.
+
+	// Step 7-1: When PX4 first gets the time from the GPS receiver.
+
+	//mavlink_log_info(&mavlink_log_pub, "[DEBUG] last_t: %llu, cur_t: %llu", gps_last_measured_time/1000, gps.time_utc_usec/1000);
+	if (gps_last_measured_time == 0) {
+		gps_last_measured_time = gps.time_utc_usec;
+	}
+	// Step 7-2: Check the time jump
+	else {
+		if ( ((gps.time_utc_usec - gps_last_measured_time)/1000) > _param_gps_time_threshold.get() ) {
+			mavlink_log_info(&mavlink_log_pub, "[WARNING] Detect a GPS spoofing attack");
+			mavlink_log_info(&mavlink_log_pub, "[WARNING] last_t: %llu, cur_t: %llu (ms)", gps_last_measured_time/1000, gps.time_utc_usec/1000);
+
+			// Step 7-3: Change the 'GPS_SPOOFING' parameter value to trigger a GPS failsafe
+			_param_gps_spoofing.set(1);
+			_param_gps_spoofing.commit();
+		}
+		else {
+			gps_last_measured_time = gps.time_utc_usec;
+		}
+	}
+
 }
 
 void VehicleGPSPosition::Publish(const sensor_gps_s &gps, uint8_t selected)
