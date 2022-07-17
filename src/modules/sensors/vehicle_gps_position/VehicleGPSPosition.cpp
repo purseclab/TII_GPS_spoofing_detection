@@ -39,6 +39,7 @@
 
 #include <systemlib/mavlink_log.h>
 #include <inttypes.h>
+#include <cstdlib>
 
 namespace sensors
 {
@@ -240,7 +241,7 @@ void VehicleGPSPosition::CheckGPSSpoofing(const sensor_gps_s &gps)
 	}
 	// Step 7-2: Check the time jump
 	else {
-		if ( ((gps.time_utc_usec - gps_last_measured_time)/1000) > _param_gps_time_threshold.get() ) {
+		if ( (abs(gps.time_utc_usec - gps_last_measured_time)/1000) > _param_gps_time_threshold.get() ) {
 			mavlink_log_info(&mavlink_log_pub, "[WARNING] Detect a GPS spoofing attack");
 			mavlink_log_info(&mavlink_log_pub, "[WARNING] last_t: %llu, cur_t: %llu (ms)", gps_last_measured_time/1000, gps.time_utc_usec/1000);
 
