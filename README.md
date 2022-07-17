@@ -118,6 +118,36 @@ Then, we change the current flight mode into 'LAND' mode as the failsafe behavio
 		}
 ```
 
+### Step 7. Detect a GPS spoofing attack by using time jump
+If we detect a huge time jump between (1) the last measured time and (2) the current measured time, this is an obvious symptom of the GPS spoofing. 
+To implement this detection method, you need to set a threshold to detect the time jump (<a href="https://github.com/KimHyungSub/px4_gps/blob/d27d7335c56b1b144deeeb7e596b808a77e97df5/src/modules/sensors/vehicle_gps_position/params.c#L147" target="_blank">GPS_TIME_THR</a>). The default parameter value is 10,000 ms (i.e., 10 seconds). Yet, you can freely change the parameter value.<br>
+
+The below code snippet detects the time jump based on GPS_TIME_THR parameter. If it detects a time jump, it triggers the failsafe behavior explained above.
+
+```C++
+	// Step 7. Let's check a GPS spoofing attack by detecting time jump.
+	// (Reference) https://gpspatron.com/spoofing-attacks-chapter-2/#:~:text=PPS%20monitoring%20with%20time%20server
+	// (How?) We can compare the internal time with the time determined by the navigation module (GPS receiver).
+	// A severe time jump can point to the presence of the GPS spoofing.
+	if (gps_last_measured_time == 0) {
+		gps_last_measured_time = gps.time_utc_usec;
+	}
+	// Step 7-2: Check the time jump
+	else {
+		if ( (abs(gps.time_utc_usec - gps_last_measured_time)/1000) > _param_gps_time_threshold.get() ) {
+			mavlink_log_info(&mavlink_log_pub, "[WARNING] Detect a GPS spoofing attack");
+			mavlink_log_info(&mavlink_log_pub, "[WARNING] last_t: %llu, cur_t: %llu (ms)", gps_last_measured_time/1000, gps.time_utc_usec/1000);
+
+			// Step 7-3: Change the 'GPS_SPOOFING' parameter value to trigger a GPS failsafe
+			_param_gps_spoofing.set(1);
+			_param_gps_spoofing.commit();
+		}
+		else {
+			gps_last_measured_time = gps.time_utc_usec;
+		}
+	}
+```
+
 ## 5. GPS Spoofing
 ### Prerequisite
 1) You need to have a software-defined radio like <a href="https://greatscottgadgets.com/hackrf/one/" target="_blank">HackRF One</a> which could simulate GPS L1 signal. 
