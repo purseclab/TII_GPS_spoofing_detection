@@ -138,11 +138,11 @@ PARAM_DEFINE_INT32(GPS_AGC_TIME, 40);
 PARAM_DEFINE_INT32(GPS_SPOOFING, 0);
 
 /**
- * If the detected time jump is higher than this parameter value, it is a GPS spoofing attack (Unit: Millisecond).
+ * If the detected time jump is higher than this parameter value, it is a GPS spoofing attack (Unit: Millisecond (ms)).
  *
  * @group GPS spoofing detection
  * @min 1000
- * @max 20000
+ * @max 60000
  */
-PARAM_DEFINE_INT32(GPS_TIME_THR, 10000);
+PARAM_DEFINE_INT32(GPS_TIME_THR, 60000);
 
