@@ -120,7 +120,7 @@ Then, we change the current flight mode into 'LAND' mode as the failsafe behavio
 
 ### Step 7. Detect a GPS spoofing attack by using time jump
 If we detect a huge time jump between (1) the last measured time and (2) the current measured time, this is an obvious symptom of the GPS spoofing. 
-To implement this detection method, you need to set a threshold to detect the time jump (<a href="https://github.com/KimHyungSub/px4_gps/blob/d27d7335c56b1b144deeeb7e596b808a77e97df5/src/modules/sensors/vehicle_gps_position/params.c#L147" target="_blank">GPS_TIME_THR</a>). The default parameter value is 10,000 ms (i.e., 10 seconds). Yet, you can freely change the parameter value.<br>
+To implement this detection method, you need to set a threshold to detect the time jump (<a href="https://github.com/KimHyungSub/px4_gps/blob/d27d7335c56b1b144deeeb7e596b808a77e97df5/src/modules/sensors/vehicle_gps_position/params.c#L147" target="_blank">GPS_TIME_THR</a>). The default parameter value is 60,000 ms (i.e., 60 seconds). I decided this default value based on experiment. Yet, you can freely change the parameter value.<br>
 
 The below code snippet detects the time jump based on GPS_TIME_THR parameter. If it detects a time jump, it triggers the failsafe behavior explained above.
 
