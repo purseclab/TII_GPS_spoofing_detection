@@ -1,4 +1,5 @@
 This work was done with Technology Innovation Institute (TII) in 2022.
+<img src="Technology_Innovation_Institute_Logo.jpg" width="480" height="264.25">
 
 # Implementation Note
 
